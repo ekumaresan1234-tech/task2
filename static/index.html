@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Stay Organized</title>
+    <!-- Modern typography from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <main class="container">
+        <header class="app-header">
+            <h1><i class="fa-solid fa-list-check"></i> Task Manager</h1>
+            <p>Organize your day, achieve your goals.</p>
+        </header>
+
+        <section class="task-input-section glass-panel">
+            <form id="task-form">
+                <div class="input-group">
+                    <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
+                </div>
+                <!-- Hidden input field for description -->
+                <div class="input-group description-group hidden" id="desc-group">
+                    <textarea id="task-desc" placeholder="Add a description (optional)" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="toggle-desc-btn" class="btn-text" aria-label="Toggle description"><i class="fa-solid fa-align-left"></i> Add Details</button>
+                    <button type="submit" class="btn-primary">Add Task <i class="fa-solid fa-plus"></i></button>
+                </div>
+            </form>
+        </section>
+
+        <section class="task-list-section">
+            <div class="list-header">
+                <h2>Your Tasks</h2>
+                <div class="filter-options">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                </div>
+            </div>
+            
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+            </div>
+
+            <ul id="task-list" class="task-list">
+                <!-- Tasks will be injected here by JS -->
+            </ul>
+            
+            <div id="empty-state" class="empty-state hidden">
+                <div class="empty-icon"><i class="fa-regular fa-clipboard"></i></div>
+                <h3>No tasks found</h3>
+                <p>You're all caught up! Enjoy your day or add a new task above.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+ 
