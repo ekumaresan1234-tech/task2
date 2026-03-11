@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Manager</title>
+</head>
+<body>
+
+<h1>Task Manager</h1>
+
+<h2>Add Task</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Task</button>
+</form>
+
+<hr>
+
+<h2>Task List</h2>
+
+<table border="1">
+<tr>
+    <th>Title</th>
+    <th>Description</th>
+    <th>Status</th>
+    <th>Date</th>
+    <th>Actions</th>
+</tr>
+
+{% for task in tasks %}
+
+<tr>
+<td>{{ task.title }}</td>
+<td>{{ task.description }}</td>
+<td>{{ task.status }}</td>
+<td>{{ task.created_date }}</td>
+
+<td>
+<a href="/update/{{ task.id }}">Edit</a>
+<a href="/delete/{{ task.id }}">Delete</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>

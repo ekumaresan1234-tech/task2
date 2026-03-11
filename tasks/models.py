@@ -1,39 +1,25 @@
 from django.db import models
-from django.utils import timezone
 
 class Task(models.Model):
-    # id field is created automatically by Django
-    title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    status = models.CharField(max_length=20, default='pending')
-    created_date = models.DateTimeField(default=timezone.now)
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed')
+    ]
 
-    class Meta:
-        db_table = 'tasks' # Maps to the existing 'tasks' table
+    title = models.CharField(max_length=200)
+    description = models.TextField(default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    created_date = models.DateTimeField(auto_now_add=True)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'status': self.status,
-            'created_date': self.created_date.strftime('%Y-%m-%d %H:%M:%S') if self.created_date else None,
-            'questions': [q.to_dict() for q in self.questions.all()]
-        }
+    def __str__(self):
+        return self.title
+    
+    from django.db import models
+
+class Task(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(default="")
+    status = models.CharField(max_length=20)
 
 class Question(models.Model):
-    task = models.ForeignKey(Task, related_name='questions', on_delete=models.CASCADE)
-    text = models.CharField(max_length=500)
-    answer = models.TextField(null=True, blank=True)
-    is_completed = models.BooleanField(default=False)
-    created_date = models.DateTimeField(default=timezone.now)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'task_id': self.task_id,
-            'text': self.text,
-            'answer': self.answer,
-            'is_completed': self.is_completed,
-            'created_date': self.created_date.strftime('%Y-%m-%d %H:%M:%S') if self.created_date else None
-        }
+    question_text = models.CharField(max_length=200)
