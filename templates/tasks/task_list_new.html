@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% block title %}Task Dashboard{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto p-8">
+    <!-- Header -->
+    <div class="text-center mb-20">
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6">
+            Task Dashboard
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            Manage your tasks with style and efficiency.
+        </p>
+    </div>
+
+    <!-- Add Task Button -->
+    <div class="text-right mb-12">
+        <button id="add-task-btn" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-4 rounded-3xl font-bold text-lg shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all duration-300 inline-flex items-center">
+            <i class="fas fa-plus mr-2"></i>Add New Task
+        </button>
+        <button onclick="testDeleteFirst()" class="ml-4 bg-red-500 hover:bg-red-600 text-white px-6 py-4 rounded-3xl font-bold text-lg shadow-2xl hover:shadow-3xl transition-all duration-300">
+            <i class="fas fa-trash mr-2"></i>Test Delete First
+        </button>
+    </div>
+
+    <!-- Tasks List -->
+    <div id="tasks-container" class="space-y-6">
+        {% for task in tasks %}
+        <div class="group bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-8 border border-slate-200/50 dark:border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div class="flex items-start justify-between mb-6">
+                <span class="px-4 py-2 rounded-2xl font-bold text-sm uppercase tracking-wide shadow-md {% if task.status == 'completed' %}bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200{% else %}bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200{% endif %}">
+                    {{ task.get_status_display }}
+                </span>
+                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all ml-auto">
+                    <button onclick="editTask({{ task.id }})" class="p-2 rounded-xl bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 transition-all">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTaskInline({{ task.id }})" class="p-2 rounded-xl bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 transition-all">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-blue-600 transition-colors">{{ task.title }}</h3>
+            
+            {% if task.description %}
+            <p class="text-slate-600 dark:text-slate-400 mb-6">{{ task.description|truncatewords:20 }}</p>
+            {% endif %}
+            
+            <div class="flex items-center justify-between pt-6 border-t border-slate-200/50 dark:border-slate-700">
+                <span class="text-sm text-slate-500 dark:text-slate-400">
+                    <i class="fas fa-calendar mr-1"></i>{{ task.created_at|date:"M d, Y" }}
+                </span>
+                <div class="flex space-x-3">
+                    <button onclick="toggleStatus({{ task.id }})" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-medium transition-colors">
+                        {% if task.status == 'pending' %}Mark Complete{% else %}Mark Pending{% endif %}
+                    </button>
+                    <button onclick="deleteTaskInline({{ task.id }})" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Delete Task
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-32">
+            <i class="fas fa-tasks text-9xl text-slate-300 dark:text-slate-600 mb-8"></i>
+            <h3 class="text-4xl font-bold text-slate-600 dark:text-slate-300 mb-4">No tasks yet</h3>
+            <p class="text-xl text-slate-500 dark:text-slate-400 mb-12 max-w-lg mx-auto">Get started by creating your first task!</p>
+            <button id="add-task-empty" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-12 py-6 rounded-3xl font-bold text-xl shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all">
+                <i class="fas fa-plus mr-3"></i>Create First Task
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Task Modal -->
+<div id="task-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 id="modal-title" class="text-3xl font-bold text-slate-900 dark:text-white">
+                        Add New Task
+                    </h2>
+                    <button id="close-modal" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="task-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="task-id" name="id">
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Task Title *</label>
+                            <input type="text" id="task-title" name="title" required class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Description</label>
+                            <textarea id="task-description" name="description" rows="4" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
+                            <select id="task-status" name="status" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4 mt-8 pt-8 border-t">
+                        <button type="button" id="cancel-btn" class="flex-1 px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all">
+                            <span id="submit-text">Create Task</span>
+                            <span id="loading" class="hidden ml-2">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple inline delete function
+function deleteTaskInline(taskId) {
+    if (!confirm('Delete this task?')) {
+        return false;
+    }
+    
+    console.log('Deleting task:', taskId);
+    
+    // Create a simple form and submit it
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/ajax/delete/' + taskId + '/';
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken.value;
+        form.appendChild(csrfInput);
+    }
+    
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    
+    return false;
+}
+
+// Test delete first task
+function testDeleteFirst() {
+    console.log('Testing delete of first task...');
+    
+    // Find the first task ID from the page
+    const taskElements = document.querySelectorAll('[onclick*="deleteTaskInline"]');
+    if (taskElements.length === 0) {
+        alert('No tasks found to delete!');
+        return;
+    }
+    
+    // Extract task ID from the first delete button
+    const firstButton = taskElements[0];
+    const onclickAttr = firstButton.getAttribute('onclick');
+    const taskIdMatch = onclickAttr.match(/deleteTaskInline\((\d+)\)/);
+    
+    if (taskIdMatch) {
+        const taskId = taskIdMatch[1];
+        console.log('Found task ID:', taskId);
+        deleteTaskInline(taskId);
+    } else {
+        alert('Could not find task ID!');
+    }
+}
+
+let editingTaskId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded');
+    
+    const modal = document.getElementById('task-modal');
+    const addBtn = document.getElementById('add-task-btn');
+    const addEmptyBtn = document.getElementById('add-task-empty');
+    const closeBtn = document.getElementById('close-modal');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const taskForm = document.getElementById('task-form');
+    
+    console.log('Elements found:', {
+        modal: !!modal,
+        addBtn: !!addBtn,
+        addEmptyBtn: !!addEmptyBtn,
+        closeBtn: !!closeBtn,
+        cancelBtn: !!cancelBtn,
+        taskForm: !!taskForm
+    });
+    
+    if (addBtn) {
+        addBtn.onclick = function() {
+            console.log('Add button clicked');
+            openAddModal();
+        };
+    }
+    if (addEmptyBtn) {
+        addEmptyBtn.onclick = function() {
+            console.log('Add empty button clicked');
+            openAddModal();
+        };
+    }
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            console.log('Close button clicked');
+            closeModal();
+        };
+    }
+    if (cancelBtn) {
+        cancelBtn.onclick = function() {
+            console.log('Cancel button clicked');
+            closeModal();
+        };
+    }
+    if (modal) {
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                console.log('Modal background clicked');
+                closeModal();
+            }
+        };
+    }
+    
+    if (taskForm) {
+        taskForm.onsubmit = handleFormSubmit;
+        console.log('Form submit handler attached');
+    }
+});
+
+function openAddModal() {
+    editingTaskId = null;
+    document.getElementById('modal-title').textContent = 'Add New Task';
+    document.getElementById('task-id').value = '';
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-description').value = '';
+    document.getElementById('task-status').value = 'pending';
+    document.getElementById('submit-text').textContent = 'Create Task';
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function editTask(id) {
+    editingTaskId = id;
+    document.getElementById('modal-title').textContent = 'Edit Task';
+    document.getElementById('task-id').value = id;
+    // Load task data via AJAX if needed
+    document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('task-modal').classList.add('hidden');
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    const formData = new FormData(e.target);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const submitText = document.getElementById('submit-text');
+    const loading = document.getElementById('loading');
+    
+    const url = editingTaskId ? `/ajax/update/${editingTaskId}/` : '/ajax/create/';
+    console.log('Submitting to:', url);
+    console.log('Form data:', Object.fromEntries(formData));
+    
+    submitText.style.display = 'none';
+    loading.classList.remove('hidden');
+    submitBtn.disabled = true;
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        submitText.style.display = 'inline';
+        loading.classList.add('hidden');
+        submitBtn.disabled = false;
+    });
+}
+
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : '';
+}
+
+function toggleStatus(id) {
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(`/ajax/update/${id}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    });
+}
+
+function deleteTask(id) {
+    console.log('Delete task:', id);
+    console.log('CSRF token available:', !!document.querySelector('[name=csrfmiddlewaretoken]'));
+    
+    if (confirm('Delete this task?')) {
+        const formData = new FormData();
+        const csrfToken = getCSRFToken();
+        console.log('CSRF token value:', csrfToken ? csrfToken.substring(0, 10) + '...' : 'NOT FOUND');
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        const deleteUrl = '/ajax/delete/' + id + '/';
+        console.log('Delete URL:', deleteUrl);
+        
+        fetch(deleteUrl, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Delete response status:', response.status);
+            console.log('Delete response headers:', [...response.headers.entries()]);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Check if response is HTML (error page) or JSON
+            const contentType = response.headers.get('content-type');
+            console.log('Response content type:', contentType);
+            
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                return response.text().then(text => {
+                    console.error('Server returned HTML:', text.substring(0, 200));
+                    throw new Error('Server returned HTML instead of JSON');
+                });
+            }
+        })
+        .then(data => {
+            console.log('Delete response data:', data);
+            if (data && data.success) {
+                console.log('Delete successful, reloading page...');
+                location.reload();
+            } else {
+                alert('Delete failed: ' + (data ? data.error : 'Invalid response'));
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            alert('Delete error: ' + error.message);
+        });
+    }
+}
+</script>
+
+<!-- Working Delete Script -->
+<script src="/static/js/working-delete.js"></script>
+{% endblock %}

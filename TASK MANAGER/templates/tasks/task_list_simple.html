@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Task Dashboard - Simple{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto p-8">
+    <h1 class="text-4xl font-bold mb-8">Simple Task Manager</h1>
+    
+    <!-- Debug Info -->
+    <div class="bg-blue-100 border border-blue-300 rounded-lg p-4 mb-6">
+        <h2 class="font-bold mb-2">Debug Information</h2>
+        <p><strong>Tasks in database:</strong> {{ tasks.count }}</p>
+        {% for task in tasks %}
+        <div class="bg-white border rounded p-2 mb-2">
+            <strong>ID:</strong> {{ task.id }} | 
+            <strong>Title:</strong> {{ task.title }} | 
+            <strong>Status:</strong> {{ task.status }}
+            <div class="mt-2">
+                <button onclick="testDelete({{ task.id }})" class="bg-red-500 text-white px-4 py-2 rounded">
+                    Delete Task {{ task.id }}
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-gray-600">No tasks found. Create one first!</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Add Task Form -->
+    <div class="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
+        <h2 class="font-bold mb-4">Add New Task</h2>
+        <form method="post" action="/ajax/create/">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block mb-2">Title:</label>
+                <input type="text" name="title" required class="border rounded px-3 py-2 w-full">
+            </div>
+            <div class="mb-4">
+                <label class="block mb-2">Description:</label>
+                <textarea name="description" class="border rounded px-3 py-2 w-full" rows="3"></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="block mb-2">Status:</label>
+                <select name="status" class="border rounded px-3 py-2">
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded">
+                Add Task
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function testDelete(taskId) {
+    console.log('=== TESTING DELETE FOR TASK ID:', taskId, '===');
+    
+    if (confirm('Delete task ' + taskId + '?')) {
+        console.log('User confirmed deletion');
+        
+        // Create form data manually
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        formData.append('id', taskId);
+        
+        console.log('Form data created:', Object.fromEntries(formData));
+        
+        fetch('/ajax/delete/' + taskId + '/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('=== RESPONSE RECEIVED ===');
+            console.log('Response:', response);
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            console.log('Response headers:', [...response.headers.entries()]);
+            
+            if (!response.ok) {
+                console.error('Response not OK:', response.status);
+                throw new Error('HTTP error: ' + response.status);
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            console.log('=== DATA PARSED ===');
+            console.log('Data:', data);
+            console.log('Data type:', typeof data);
+            
+            if (data && data.success) {
+                console.log('Delete successful!');
+                alert('Task deleted successfully!');
+                window.location.reload();
+            } else {
+                console.error('Delete failed:', data);
+                alert('Delete failed: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('=== CATCH ERROR ===');
+            console.error('Error:', error);
+            console.error('Error type:', typeof error);
+            console.error('Error message:', error.message);
+            alert('Delete error: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}
